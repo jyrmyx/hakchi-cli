@@ -104,7 +104,7 @@ bundle_native() {
 }
 
 for rid in $RIDS; do
-  name="hackchi-cli-${VERSION}-${rid}"
+  name="hakchi-cli-${VERSION}-${rid}"
   dest="$OUT/$name"
   rm -rf "$dest"
   mkdir -p "$dest"
@@ -142,28 +142,28 @@ for rid in $RIDS; do
   fi
 
   # Friendly launcher that chdirs to package root (assets + libusb)
-  cat > "$dest/hackchi" <<'EOF'
+  cat > "$dest/hakchi" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 exec "$ROOT/hakchi-cli" "$@"
 EOF
-  chmod +x "$dest/hackchi" "$dest/hakchi-cli" 2>/dev/null || chmod +x "$dest/hackchi"
+  chmod +x "$dest/hakchi" "$dest/hakchi-cli" 2>/dev/null || chmod +x "$dest/hakchi"
 
   # README snippet inside the zip
   cat > "$dest/README.txt" <<EOF
-hackchi-cli ${VERSION} (${rid})
+hakchi-cli ${VERSION} (${rid})
 ================================
 
 Self-contained build — no .NET SDK required.
 
 Quick start
 -----------
-  ./hackchi status
-  ./hackchi usb
-  ./hackchi games
-  ./hackchi add-game /path/to/game.zip
+  ./hakchi status
+  ./hakchi usb
+  ./hakchi games
+  ./hakchi add-game /path/to/game.zip
 
 On macOS the first USB access may prompt for permission.
 Use a data USB cable; power the Classic to the hakchi game menu (RNDIS 04E8:6863).

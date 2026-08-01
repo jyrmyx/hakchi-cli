@@ -1,4 +1,4 @@
-# hackchi-cli
+# hakchi-cli
 
 Headless **macOS / Linux** CLI for Nintendo Classic Mini consoles running **hakchi**.
 
@@ -16,32 +16,32 @@ You need a console that already has **hakchi custom firmware** (installed earlie
 
 ## Download (no build)
 
-Releases: [github.com/jyrmyx/hackchi-cli/releases](https://github.com/jyrmyx/hackchi-cli/releases)
+Releases: [github.com/jyrmyx/hakchi-cli/releases](https://github.com/jyrmyx/hakchi-cli/releases)
 
 After the **Release** workflow finishes for a tag, you should see **platform binaries** (not just source):
 
 | Asset | Machine |
 |-------|---------|
-| `hackchi-cli-<ver>-osx-arm64.zip` | Apple Silicon Mac (M1/M2/M3/…) |
-| `hackchi-cli-<ver>-osx-x64.zip` | Intel Mac |
-| `hackchi-cli-<ver>-linux-x64.zip` | Linux x86_64 |
-| `hackchi-cli-<ver>-linux-arm64.zip` | Linux ARM64 |
+| `hakchi-cli-<ver>-osx-arm64.zip` | Apple Silicon Mac (M1/M2/M3/…) |
+| `hakchi-cli-<ver>-osx-x64.zip` | Intel Mac |
+| `hakchi-cli-<ver>-linux-x64.zip` | Linux x86_64 |
+| `hakchi-cli-<ver>-linux-arm64.zip` | Linux ARM64 |
 
 GitHub also always offers **Source code (zip)** / **Source code (tar.gz)** — those are the repo snapshot only (you must build). Prefer the platform zips above when present.
 
 ```bash
-unzip hackchi-cli-*-osx-arm64.zip
-cd hackchi-cli-*-osx-arm64
+unzip hakchi-cli-*-osx-arm64.zip
+cd hakchi-cli-*-osx-arm64
 
 # macOS only — clear Gatekeeper quarantine (usually needs sudo; see below)
 sudo xattr -dr com.apple.quarantine .
 
-./hackchi status
-./hackchi games
-./hackchi add-game ~/Downloads/DuckTales.zip
+./hakchi status
+./hakchi games
+./hakchi add-game ~/Downloads/DuckTales.zip
 ```
 
-These platform builds are **self-contained** (no .NET SDK). On macOS, `libusb` is bundled in the zip when the release was built with Homebrew libusb available. If `./hackchi status` still says libusb is missing: `brew install libusb`.
+These platform builds are **self-contained** (no .NET SDK). On macOS, `libusb` is bundled in the zip when the release was built with Homebrew libusb available. If `./hakchi status` still says libusb is missing: `brew install libusb`.
 
 First USB access may show a macOS permission prompt.
 
@@ -52,9 +52,9 @@ That is **Gatekeeper**, not a broken build. Release binaries are only **ad-hoc s
 On recent macOS, **right‑click → Open often does not offer an “Open” override** for this dialog — clear quarantine from Terminal instead:
 
 ```bash
-cd /path/to/hackchi-cli-*-osx-arm64   # folder you unzipped
+cd /path/to/hakchi-cli-*-osx-arm64   # folder you unzipped
 sudo xattr -dr com.apple.quarantine .
-./hackchi status
+./hakchi status
 ```
 
 `sudo` is typically required so macOS will actually remove the quarantine attribute on the binary and dylibs. Run it on the **extracted folder** (not only the zip).
@@ -83,7 +83,7 @@ dotnet build Hakchi.Port.slnx
 ```bash
 ./scripts/publish-release.sh                 # current OS default RIDs
 RIDS=osx-arm64 ./scripts/publish-release.sh  # one platform only
-# → artifacts/release/hackchi-cli-<version>-<rid>.zip
+# → artifacts/release/hakchi-cli-<version>-<rid>.zip
 ```
 
 Tagging `v0.1.0` (or any `v*`) on GitHub runs the release workflow and attaches zips automatically.
@@ -106,7 +106,7 @@ dotnet test Hakchi.Port.slnx -c Release   # same tests locally
 
 **Dependabot** (`.github/dependabot.yml`) opens monthly PRs for NuGet and GitHub Actions updates (grouped minors/patches).
 
-No arguments to `./run` / `./hackchi` prints the command list (`--help`). Optional menu: `./hackchi repl`.
+No arguments to `./run` / `./hakchi` prints the command list (`--help`). Optional menu: `./hakchi repl`.
 
 ## Adding games (add-only)
 
