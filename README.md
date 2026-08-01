@@ -106,7 +106,7 @@ dotnet test Hakchi.Port.slnx -c Release   # same tests locally
 
 **Dependabot** (`.github/dependabot.yml`) opens monthly PRs for NuGet and GitHub Actions updates (grouped minors/patches).
 
-No arguments to `./run` / `./hackchi` opens an interactive menu.
+No arguments to `./run` / `./hackchi` prints the command list (`--help`). Optional menu: `./hackchi repl`.
 
 ## Adding games (add-only)
 
