@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="hakchi-cli/hakchi-cli.csproj" />
+  <Project Path="Hakchi.Clovershell/Hakchi.Clovershell.csproj" />
+  <Project Path="Hakchi.Core/Hakchi.Core.csproj" />
+  <Project Path="Hakchi.Fel/Hakchi.Fel.csproj" />
+  <Project Path="Hakchi.Rndis/Hakchi.Rndis.csproj" />
+  <Project Path="Hakchi.Usb/Hakchi.Usb.csproj" />
+</Solution>

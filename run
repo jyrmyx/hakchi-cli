@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Convenience launcher for Homebrew .NET on Apple Silicon.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+export PATH="/opt/homebrew/bin:${PATH}"
+if [[ -z "${DOTNET_ROOT:-}" ]]; then
+  if command -v brew >/dev/null 2>&1; then
+    export DOTNET_ROOT="$(brew --prefix dotnet)/libexec"
+  fi
+fi
+exec dotnet run --project "$ROOT/hakchi-cli" -- "$@"

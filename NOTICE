@@ -1,0 +1,52 @@
+hackchi-cli
+===========
+
+A headless CLI for managing games on Nintendo Classic Mini consoles
+running hakchi firmware, focused on macOS and Linux.
+
+This project is a **derivative work** of concepts, protocols, and some
+ported modules from Hakchi2-CE and related open-source projects. It is
+**not** an official Team Shinkansen product and is not a drop-in
+replacement for the Windows Hakchi2-CE GUI.
+
+Credits and lineage
+-------------------
+
+### Hakchi2-CE (Team Shinkansen)
+
+https://github.com/TeamShinkansen/Hakchi2-CE
+
+Ported / reimplemented ideas and code paths include:
+
+- Allwinner FEL client structure (FelLib lineage)
+- Clovershell USB protocol (com.clusterrr.clovershell lineage)
+- SNES canoe `.sfrom` packaging (SnesGame.MakeSfrom algorithm)
+- Game desktop entry layout, CLV code generation, linked storage layout
+- Default blank NES/SNES cart artwork from hakchi_gui images
+
+Licensed under the GNU General Public License v3.0. See LICENSE.
+
+### Original hakchi ecosystem
+
+- Cluster / hakchi authors and contributors for the Classic Mini
+  custom firmware ecosystem, USB gadget behavior, and on-console tools
+- Community documentation around RNDIS (`04E8:6863`), SSH, and game paths
+
+### Third-party libraries (runtime dependencies)
+
+Shipped via NuGet / package managers; see project files for versions:
+
+- LibUsbDotNet
+- SSH.NET (Renci.SshNet)
+- Spectre.Console / Spectre.Console.Cli
+
+Please respect their respective licenses.
+
+### This port
+
+macOS/Linux userspace RNDIS Ethernet stack, CLI-first add-only game
+upload (no full library sync), and packaging for NES/SNES are original
+work for this repository, still under GPL-3 as part of the combined work.
+
+If you improve shared protocol understanding (FEL, clovershell, canoe),
+consider documenting changes for the wider hakchi community.

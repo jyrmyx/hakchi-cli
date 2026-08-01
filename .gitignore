@@ -1,0 +1,29 @@
+# Build
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# IDE
+.vs/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local package cache / temp
+.game-packages/
+**/game-packages/
+
+# Logs / debug
+*.log
+*.pdb
+
+# Rider / VS Code local
+.vscode/*
+!.vscode/extensions.json
