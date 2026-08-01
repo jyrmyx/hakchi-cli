@@ -32,6 +32,10 @@ GitHub also always offers **Source code (zip)** / **Source code (tar.gz)** — t
 ```bash
 unzip hackchi-cli-*-osx-arm64.zip
 cd hackchi-cli-*-osx-arm64
+
+# macOS only — clear Gatekeeper quarantine (usually needs sudo; see below)
+sudo xattr -dr com.apple.quarantine .
+
 ./hackchi status
 ./hackchi games
 ./hackchi add-game ~/Downloads/DuckTales.zip
@@ -41,7 +45,23 @@ These platform builds are **self-contained** (no .NET SDK). On macOS, `libusb` i
 
 First USB access may show a macOS permission prompt.
 
-If a release only has source archives, either build from source (below) or re-run the **Release** workflow for that tag (Actions → Release → Re-run jobs) after the workflow is fixed.
+### macOS: “Apple could not verify hakchi-cli…”
+
+That is **Gatekeeper**, not a broken build. Release binaries are only **ad-hoc signed** (free). macOS marks browser/GitHub downloads with a quarantine flag and then blocks apps that are not **Developer ID–signed and notarized**.
+
+On recent macOS, **right‑click → Open often does not offer an “Open” override** for this dialog — clear quarantine from Terminal instead:
+
+```bash
+cd /path/to/hackchi-cli-*-osx-arm64   # folder you unzipped
+sudo xattr -dr com.apple.quarantine .
+./hackchi status
+```
+
+`sudo` is typically required so macOS will actually remove the quarantine attribute on the binary and dylibs. Run it on the **extracted folder** (not only the zip).
+
+**True “no warning for every user”** needs a paid [Apple Developer](https://developer.apple.com) program membership, codesigning with a **Developer ID Application** certificate, and **notarization** in the release pipeline (~$99/year). Building from source locally usually does not hit this dialog.
+
+If a release only has source archives, either build from source (below) or re-run the **Release** workflow for that tag (Actions → Release → Re-run jobs).
 
 ## Build from source
 

@@ -133,8 +133,8 @@ for rid in $RIDS; do
 
   bundle_native "$rid" "$dest"
 
-  # macOS Gatekeeper: ad-hoc sign binary + bundled dylib so downloads run without
-  # "damaged" / Killed surprises (users can still right-click → Open if quarantined).
+  # Ad-hoc sign (no Apple Developer ID). Downloads still get Gatekeeper quarantine —
+  # users: sudo xattr -dr com.apple.quarantine .
   if [[ "$rid" == osx-* ]] && command -v codesign >/dev/null 2>&1; then
     codesign --force --sign - "$dest/libusb-1.0.dylib" 2>/dev/null || true
     codesign --force --sign - "$dest/hakchi-cli" 2>/dev/null || true
@@ -172,9 +172,8 @@ If status says libusb is missing:
   macOS:  brew install libusb
   Debian: sudo apt install libusb-1.0-0
 
-macOS "unidentified developer" / quarantine after download:
-  xattr -dr com.apple.quarantine .
-  # or: right-click → Open once
+macOS Gatekeeper ("Apple could not verify…"):
+  sudo xattr -dr com.apple.quarantine .
 
 License: GPL-3.0 — see LICENSE / NOTICE in the source repository.
 EOF
