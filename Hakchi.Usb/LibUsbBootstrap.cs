@@ -71,6 +71,22 @@ public static class LibUsbBootstrap
 
     public static IEnumerable<string> CandidatePaths()
     {
+        // Prefer native lib shipped next to the binary (downloadable releases).
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath);
+        if (!string.IsNullOrEmpty(exeDir))
+        {
+            yield return Path.Combine(exeDir, "libusb-1.0.dylib");
+            yield return Path.Combine(exeDir, "libusb-1.0.so");
+            yield return Path.Combine(exeDir, "libusb-1.0.so.0");
+            yield return Path.Combine(exeDir, "runtimes", "native", "libusb-1.0.dylib");
+            yield return Path.Combine(exeDir, "runtimes", "native", "libusb-1.0.so.0");
+        }
+
+        yield return Path.Combine(AppContext.BaseDirectory, "libusb-1.0.dylib");
+        yield return Path.Combine(AppContext.BaseDirectory, "libusb-1.0.so");
+        yield return Path.Combine(AppContext.BaseDirectory, "libusb-1.0.so.0");
+
+        // Dev machines: Homebrew / system packages
         var homebrew = Environment.GetEnvironmentVariable("HOMEBREW_PREFIX") ?? "/opt/homebrew";
         yield return Path.Combine(homebrew, "lib", "libusb-1.0.dylib");
         yield return "/usr/local/lib/libusb-1.0.dylib";
@@ -78,9 +94,6 @@ public static class LibUsbBootstrap
         yield return "/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0";
         yield return "/usr/lib/aarch64-linux-gnu/libusb-1.0.so.0";
         yield return "/usr/lib/libusb-1.0.so.0";
-        yield return Path.Combine(AppContext.BaseDirectory, "libusb-1.0.dylib");
-        yield return Path.Combine(AppContext.BaseDirectory, "libusb-1.0.so");
-        yield return Path.Combine(AppContext.BaseDirectory, "libusb-1.0.so.0");
     }
 
     public static string DescribeNativeLibraryStatus()

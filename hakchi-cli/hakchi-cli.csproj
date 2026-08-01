@@ -8,7 +8,11 @@
     <RootNamespace>Hakchi.Cli</RootNamespace>
     <AssemblyName>hakchi-cli</AssemblyName>
     <Version>0.1.0</Version>
-    <Description>Headless / ASCII CLI port of Hakchi2-CE for macOS and Linux</Description>
+    <Description>Headless CLI for hakchi Classic Minis (macOS / Linux)</Description>
+    <!-- Release publish defaults (overridable on CLI) -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +35,10 @@
     <None Include="..\assets\blank_nes_small.png" Link="assets\blank_nes_small.png" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\assets\blank_nes_small.png')" />
     <None Include="..\assets\blank_snes-us.png" Link="assets\blank_snes-us.png" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\assets\blank_snes-us.png')" />
     <None Include="..\assets\blank_snes-us_small.png" Link="assets\blank_snes-us_small.png" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\assets\blank_snes-us_small.png')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hakchi.Cli.Tests" />
   </ItemGroup>
 
 </Project>

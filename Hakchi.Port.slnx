@@ -5,4 +5,5 @@
   <Project Path="Hakchi.Fel/Hakchi.Fel.csproj" />
   <Project Path="Hakchi.Rndis/Hakchi.Rndis.csproj" />
   <Project Path="Hakchi.Usb/Hakchi.Usb.csproj" />
+  <Project Path="tests/Hakchi.Cli.Tests/Hakchi.Cli.Tests.csproj" />
 </Solution>
