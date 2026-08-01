@@ -20,9 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # macos-14 is Apple Silicon; .NET cross-compiles osx-x64 fine from here.
+          # (macos-13 is deprecated / often unavailable — do not use it.)
           - os: macos-14
             rid: osx-arm64
-          - os: macos-13
+          - os: macos-14
             rid: osx-x64
           - os: ubuntu-22.04
             rid: linux-x64
@@ -57,7 +59,6 @@ jobs:
             V="${{ github.event.inputs.version }}"
           fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
-          # Keep csproj in sync for informational Version attribute
           sed -i.bak -E "s#<Version>[^<]+</Version>#<Version>${V}</Version>#" hakchi-cli/hakchi-cli.csproj || true
 
       - name: Publish
@@ -75,6 +76,7 @@ jobs:
         with:
           name: hackchi-cli-${{ steps.ver.outputs.version }}-${{ matrix.rid }}
           path: artifacts/release/*.zip
+          if-no-files-found: error
 
   release:
     needs: build
@@ -87,10 +89,15 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Create GitHub Release
+      - name: List zips
+        run: find dist -type f -name '*.zip' -ls
+
+      - name: Attach zips to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          # Updates the existing release if you created it from the UI for this tag
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: dist/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

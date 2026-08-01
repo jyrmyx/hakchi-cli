@@ -16,14 +16,18 @@ You need a console that already has **hakchi custom firmware** (installed earlie
 
 ## Download (no build)
 
-From [GitHub Releases](../../releases) grab the zip for your machine:
+Releases: [github.com/jyrmyx/hackchi-cli/releases](https://github.com/jyrmyx/hackchi-cli/releases)
 
-| Zip | Machine |
-|-----|---------|
-| `hackchi-cli-*-osx-arm64.zip` | Apple Silicon Mac (M1/M2/M3/…) |
-| `hackchi-cli-*-osx-x64.zip` | Intel Mac |
-| `hackchi-cli-*-linux-x64.zip` | Linux x86_64 |
-| `hackchi-cli-*-linux-arm64.zip` | Linux ARM64 |
+After the **Release** workflow finishes for a tag, you should see **platform binaries** (not just source):
+
+| Asset | Machine |
+|-------|---------|
+| `hackchi-cli-<ver>-osx-arm64.zip` | Apple Silicon Mac (M1/M2/M3/…) |
+| `hackchi-cli-<ver>-osx-x64.zip` | Intel Mac |
+| `hackchi-cli-<ver>-linux-x64.zip` | Linux x86_64 |
+| `hackchi-cli-<ver>-linux-arm64.zip` | Linux ARM64 |
+
+GitHub also always offers **Source code (zip)** / **Source code (tar.gz)** — those are the repo snapshot only (you must build). Prefer the platform zips above when present.
 
 ```bash
 unzip hackchi-cli-*-osx-arm64.zip
@@ -33,9 +37,11 @@ cd hackchi-cli-*-osx-arm64
 ./hackchi add-game ~/Downloads/DuckTales.zip
 ```
 
-These builds are **self-contained** (no .NET SDK install). On macOS, `libusb` is bundled when the release was built on a Mac with Homebrew libusb. If `./hackchi status` still says libusb is missing: `brew install libusb`.
+These platform builds are **self-contained** (no .NET SDK). On macOS, `libusb` is bundled in the zip when the release was built with Homebrew libusb available. If `./hackchi status` still says libusb is missing: `brew install libusb`.
 
 First USB access may show a macOS permission prompt.
+
+If a release only has source archives, either build from source (below) or re-run the **Release** workflow for that tag (Actions → Release → Re-run jobs) after the workflow is fixed.
 
 ## Build from source
 
