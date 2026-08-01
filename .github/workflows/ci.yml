@@ -1,11 +1,18 @@
 name: CI
 
+# Avoid double runs: opening/updating a PR triggers both `push` (to the head
+# branch) and `pull_request`. We only listen to:
+#   - pull_request  → every PR (any branch → base)
+#   - push to main  → direct commits / merges onto the default branch
 on:
   push:
+    branches:
+      - main
   pull_request:
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:

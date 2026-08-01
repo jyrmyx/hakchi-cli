@@ -64,7 +64,15 @@ Tagging `v0.1.0` (or any `v*`) on GitHub runs the release workflow and attaches 
 
 ### Continuous integration
 
-Every push and pull request runs **CI** (`.github/workflows/ci.yml`): restore, Release build, unit tests, and a CLI `--help` smoke check on Ubuntu and macOS. Hardware/USB tests are not run in CI (no Classic attached).
+**CI** (`.github/workflows/ci.yml`) runs on:
+
+- every **pull request**
+- every **push to `main`**
+- manual **workflow_dispatch**
+
+(Not on every feature-branch push alone — that would double-run with the PR event.)
+
+It restores, builds Release, runs unit tests, and smoke-checks CLI `--help` on Ubuntu and macOS. Hardware/USB tests are not run in CI (no Classic attached).
 
 ```bash
 dotnet test Hakchi.Port.slnx -c Release   # same tests locally
