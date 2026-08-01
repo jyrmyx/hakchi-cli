@@ -78,6 +78,8 @@ It restores, builds Release, runs unit tests, and smoke-checks CLI `--help` on U
 dotnet test Hakchi.Port.slnx -c Release   # same tests locally
 ```
 
+**Dependabot** (`.github/dependabot.yml`) opens monthly PRs for NuGet and GitHub Actions updates (grouped minors/patches).
+
 No arguments to `./run` / `./hackchi` opens an interactive menu.
 
 ## Adding games (add-only)
