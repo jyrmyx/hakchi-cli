@@ -34,10 +34,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
 
@@ -72,7 +72,7 @@ jobs:
           ./scripts/publish-release.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hakchi-cli-${{ steps.ver.outputs.version }}-${{ matrix.rid }}
           path: artifacts/release/*.zip
@@ -84,7 +84,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -93,7 +93,7 @@ jobs:
         run: find dist -type f -name '*.zip' -ls
 
       - name: Attach zips to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           # Updates the existing release if you created it from the UI for this tag
           generate_release_notes: true
