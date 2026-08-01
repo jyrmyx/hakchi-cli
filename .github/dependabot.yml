@@ -18,8 +18,6 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    labels:
-      - "dependencies"
     commit-message:
       prefix: "deps"
 
@@ -36,7 +34,5 @@ updates:
       actions:
         patterns:
           - "*"
-    labels:
-      - "dependencies"
     commit-message:
       prefix: "ci"
