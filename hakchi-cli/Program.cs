@@ -65,14 +65,15 @@ public static class Program
                     .WithDescription("RAM-only memboot via FEL (no NAND write). Boots a recovery image from RAM.");
 
                 config.AddCommand<ReplCommand>("repl")
-                    .WithDescription("ASCII menu / interactive mode (default when no args)");
+                    .WithDescription("ASCII interactive menu (optional)");
             });
 
-            int code;
+            // No args → show documented commands (Spectre help). Do not invent a fake
+            // CommandContext for the old REPL default — that throws ArgumentNullException.
             if (args.Length == 0)
-                code = new ReplCommand().Execute(new CommandContext(new List<string>(), null!, "repl", null), new ReplSettings());
-            else
-                code = app.Run(args);
+                args = ["--help"];
+
+            int code = app.Run(args);
 
             try { LibUsbBootstrap.Shutdown(); } catch { }
             // LibUsbDotNet / USB threads may otherwise keep the process alive for a minute+.

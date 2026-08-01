@@ -104,7 +104,7 @@ bundle_native() {
 }
 
 for rid in $RIDS; do
-  name="hackchi-cli-${VERSION}-${rid}"
+  name="hakchi-cli-${VERSION}-${rid}"
   dest="$OUT/$name"
   rm -rf "$dest"
   mkdir -p "$dest"
@@ -133,8 +133,8 @@ for rid in $RIDS; do
 
   bundle_native "$rid" "$dest"
 
-  # macOS Gatekeeper: ad-hoc sign binary + bundled dylib so downloads run without
-  # "damaged" / Killed surprises (users can still right-click → Open if quarantined).
+  # Ad-hoc sign (no Apple Developer ID). Downloads still get Gatekeeper quarantine —
+  # users: sudo xattr -dr com.apple.quarantine .
   if [[ "$rid" == osx-* ]] && command -v codesign >/dev/null 2>&1; then
     codesign --force --sign - "$dest/libusb-1.0.dylib" 2>/dev/null || true
     codesign --force --sign - "$dest/hakchi-cli" 2>/dev/null || true
@@ -142,28 +142,28 @@ for rid in $RIDS; do
   fi
 
   # Friendly launcher that chdirs to package root (assets + libusb)
-  cat > "$dest/hackchi" <<'EOF'
+  cat > "$dest/hakchi" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 exec "$ROOT/hakchi-cli" "$@"
 EOF
-  chmod +x "$dest/hackchi" "$dest/hakchi-cli" 2>/dev/null || chmod +x "$dest/hackchi"
+  chmod +x "$dest/hakchi" "$dest/hakchi-cli" 2>/dev/null || chmod +x "$dest/hakchi"
 
   # README snippet inside the zip
   cat > "$dest/README.txt" <<EOF
-hackchi-cli ${VERSION} (${rid})
+hakchi-cli ${VERSION} (${rid})
 ================================
 
 Self-contained build — no .NET SDK required.
 
 Quick start
 -----------
-  ./hackchi status
-  ./hackchi usb
-  ./hackchi games
-  ./hackchi add-game /path/to/game.zip
+  ./hakchi status
+  ./hakchi usb
+  ./hakchi games
+  ./hakchi add-game /path/to/game.zip
 
 On macOS the first USB access may prompt for permission.
 Use a data USB cable; power the Classic to the hakchi game menu (RNDIS 04E8:6863).
@@ -172,9 +172,8 @@ If status says libusb is missing:
   macOS:  brew install libusb
   Debian: sudo apt install libusb-1.0-0
 
-macOS "unidentified developer" / quarantine after download:
-  xattr -dr com.apple.quarantine .
-  # or: right-click → Open once
+macOS Gatekeeper ("Apple could not verify…"):
+  sudo xattr -dr com.apple.quarantine .
 
 License: GPL-3.0 — see LICENSE / NOTICE in the source repository.
 EOF
