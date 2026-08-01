@@ -37,4 +37,8 @@
     <None Include="..\assets\blank_snes-us_small.png" Link="assets\blank_snes-us_small.png" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\assets\blank_snes-us_small.png')" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hakchi.Cli.Tests" />
+  </ItemGroup>
+
 </Project>

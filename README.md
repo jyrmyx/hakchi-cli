@@ -62,6 +62,14 @@ RIDS=osx-arm64 ./scripts/publish-release.sh  # one platform only
 
 Tagging `v0.1.0` (or any `v*`) on GitHub runs the release workflow and attaches zips automatically.
 
+### Continuous integration
+
+Every push and pull request runs **CI** (`.github/workflows/ci.yml`): restore, Release build, unit tests, and a CLI `--help` smoke check on Ubuntu and macOS. Hardware/USB tests are not run in CI (no Classic attached).
+
+```bash
+dotnet test Hakchi.Port.slnx -c Release   # same tests locally
+```
+
 No arguments to `./run` / `./hackchi` opens an interactive menu.
 
 ## Adding games (add-only)

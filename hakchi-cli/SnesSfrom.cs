@@ -57,13 +57,23 @@ internal static class SnesSfrom
 
     public static SnesRomHeader GetCorrectHeader(byte[] rawRomData, out SnesRomType romType, out string gameTitle)
     {
-        var lo = SnesRomHeader.Read(rawRomData, 0x7FC0);
-        var hi = SnesRomHeader.Read(rawRomData, 0xFFC0);
-        var titleLo = lo.GameTitle;
-        var titleHi = hi.GameTitle;
+        if (rawRomData.Length < 0x7FC0 + 32)
+            throw new InvalidOperationException("SNES ROM too small to contain a cartridge header.");
 
+        var lo = SnesRomHeader.Read(rawRomData, 0x7FC0);
+        var titleLo = lo.GameTitle;
         bool loOk = ((lo.Checksum ^ 0xFFFF) == lo.ChecksumComplement) && !string.IsNullOrEmpty(titleLo);
-        bool hiOk = ((hi.Checksum ^ 0xFFFF) == hi.ChecksumComplement) && !string.IsNullOrEmpty(titleHi);
+
+        SnesRomHeader? hi = null;
+        string titleHi = "";
+        bool hiOk = false;
+        // HiROM header only exists on ≥64 KiB images
+        if (rawRomData.Length >= 0xFFC0 + 32)
+        {
+            hi = SnesRomHeader.Read(rawRomData, 0xFFC0);
+            titleHi = hi.Value.GameTitle;
+            hiOk = ((hi.Value.Checksum ^ 0xFFFF) == hi.Value.ChecksumComplement) && !string.IsNullOrEmpty(titleHi);
+        }
 
         if (loOk && !hiOk)
         {
@@ -71,13 +81,13 @@ internal static class SnesSfrom
             gameTitle = titleLo;
             return lo;
         }
-        if (hiOk && !loOk)
+        if (hiOk && hi.HasValue && !loOk)
         {
             romType = SnesRomType.HiRom;
             gameTitle = titleHi;
-            return hi;
+            return hi.Value;
         }
-        if (loOk && hiOk)
+        if (loOk && hiOk && hi.HasValue)
         {
             // Prefer map mode bit
             if ((lo.RomMakeup & 1) == 0)
@@ -88,7 +98,7 @@ internal static class SnesSfrom
             }
             romType = SnesRomType.HiRom;
             gameTitle = titleHi;
-            return hi;
+            return hi.Value;
         }
 
         // Fallback: score by printable title
@@ -98,11 +108,11 @@ internal static class SnesSfrom
             gameTitle = titleLo;
             return lo;
         }
-        if (titleHi.Length > 0)
+        if (titleHi.Length > 0 && hi.HasValue)
         {
             romType = SnesRomType.HiRom;
             gameTitle = titleHi;
-            return hi;
+            return hi.Value;
         }
 
         throw new InvalidOperationException("Can't detect SNES ROM type (corrupt or unsupported image).");
