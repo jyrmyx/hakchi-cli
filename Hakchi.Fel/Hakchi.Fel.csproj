@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+    <PackageReference Include="LibUsbDotNet" Version="2.2.85" />
   </ItemGroup>
 
 </Project>
