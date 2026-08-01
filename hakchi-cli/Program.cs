@@ -56,7 +56,7 @@ public static class Program
                     .WithDescription("READ-ONLY: list games on the console via USB RNDIS + SSH (no sync/flash)");
 
                 config.AddCommand<AddGameCommand>("add-game")
-                    .WithDescription("ADD-ONLY: package a ROM/zip and upload one game (no full sync, no mass delete)");
+                    .WithDescription("ADD-ONLY: package and upload one or more ROMs/zips (no full sync, no mass delete)");
 
                 config.AddCommand<RemoteCommand>("remote")
                     .WithDescription("READ-ONLY-ish: run a shell command on the console over RNDIS SSH (no sync)");
@@ -763,9 +763,9 @@ internal sealed class AddGameCommand : Command<AddGameCommand.Settings>
 {
     public sealed class Settings : CommandSettings
     {
-        [CommandArgument(0, "<rom-or-zip>")]
-        [Description("Path to ROM or zip: .nes / .sfc / .smc / .sfrom (e.g. ~/Downloads/Mortal Kombat II.zip)")]
-        public string InputPath { get; init; } = "";
+        [CommandArgument(0, "<roms>")]
+        [Description("One or more ROMs/zips, or a shell/glob pattern (e.g. ~/Downloads/*.zip game.nes)")]
+        public string[] Paths { get; init; } = Array.Empty<string>();
 
         [CommandOption("-t|--timeout")]
         [Description("Seconds to wait for network/SSH")]
@@ -780,40 +780,74 @@ internal sealed class AddGameCommand : Command<AddGameCommand.Settings>
         public bool Force { get; init; }
 
         [CommandOption("--no-refresh")]
-        [Description("Skip overmount_games / UI restart after upload")]
+        [Description("Skip overmount_games / UI restart after each/all uploads")]
         public bool NoRefresh { get; init; }
 
         [CommandOption("--package-dir")]
-        [Description("Where to write the local CLV package (default: ~/.local/share/hakchi-cli/game-packages)")]
+        [Description("Where to write local CLV packages (default: ~/.local/share/hakchi-cli/game-packages)")]
         public string? PackageDir { get; init; }
 
         [CommandOption("--emulator")]
-        [Description("Override remote emulator binary (default: auto / clover-kachikachi-wr)")]
+        [Description("Override remote emulator binary (default: auto per system)")]
         public string? Emulator { get; init; }
+
+        [CommandOption("--stop-on-error")]
+        [Description("Stop the batch on the first failure (default: continue and summarize)")]
+        public bool StopOnError { get; init; }
     }
 
     public override int Execute(CommandContext context, Settings settings)
     {
         AnsiConsole.MarkupLine("[yellow]Add-only game upload — will not full-sync or mass-delete games.[/]");
         AnsiConsole.MarkupLine("[grey]Supports NES (.nes) and SNES (.sfc/.smc/.sfrom), or a zip with one of those.[/]");
+        AnsiConsole.MarkupLine("[grey]Requires a Classic already running [white]hakchi[/] (this tool does not flash stock → hakchi).[/]");
 
         try
         {
-            var input = ExpandPath(settings.InputPath);
-            AnsiConsole.MarkupLine($"[grey]Source:[/] {Markup.Escape(input)}");
+            var inputs = ExpandInputs(settings.Paths).ToList();
+            if (inputs.Count == 0)
+                throw new ArgumentException("No ROM/zip paths matched. Pass files and/or globs, e.g. add-game a.zip b.nes '~/Downloads/*.sfc'");
 
-            var package = GamePackager.Package(input, settings.PackageDir, settings.Emulator);
-            AnsiConsole.MarkupLine($"[green]Packaged[/] [bold]{Markup.Escape(package.Name)}[/] as [cyan]{Markup.Escape(package.Code)}[/]");
-            AnsiConsole.WriteLine($"Local package: {package.LocalDirectory}");
-            AnsiConsole.MarkupLine($"[grey]CRC32:[/] {package.Crc32:X8}  [grey]ROM:[/] {Markup.Escape(package.RomFileName)}");
+            AnsiConsole.MarkupLine($"[grey]Queue:[/] {inputs.Count} file(s)");
+            foreach (var p in inputs)
+                AnsiConsole.MarkupLine($"  [grey]•[/] {Markup.Escape(p)}");
 
-            foreach (var f in Directory.EnumerateFiles(package.LocalDirectory))
-                AnsiConsole.WriteLine($"  • {Path.GetFileName(f)} ({new FileInfo(f).Length} bytes)");
+            // Package all first (local only) so dry-run and preflight are fast to reason about
+            var packages = new List<(string Source, GamePackage Package)>();
+            var packageFailures = new List<(string Source, string Error)>();
+            foreach (var input in inputs)
+            {
+                try
+                {
+                    AnsiConsole.WriteLine();
+                    AnsiConsole.MarkupLine($"[bold]Packaging[/] {Markup.Escape(Path.GetFileName(input))}…");
+                    var package = GamePackager.Package(input, settings.PackageDir, settings.Emulator);
+                    AnsiConsole.MarkupLine(
+                        $"[green]Packaged[/] [bold]{Markup.Escape(package.Name)}[/] as [cyan]{Markup.Escape(package.Code)}[/] " +
+                        $"[grey]({package.System}, {package.RomFileName})[/]");
+                    packages.Add((input, package));
+                }
+                catch (Exception ex)
+                {
+                    packageFailures.Add((input, ex.Message));
+                    AnsiConsole.MarkupLine($"[red]Package failed:[/] {Markup.Escape(Path.GetFileName(input))} — {Markup.Escape(ex.Message)}");
+                    if (settings.StopOnError)
+                        break;
+                }
+            }
 
             if (settings.DryRun)
             {
-                AnsiConsole.MarkupLine("[green]Dry-run complete — nothing sent to the console.[/]");
-                return 0;
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine(
+                    $"[green]Dry-run complete[/] — packaged [green]{packages.Count}[/], failed [red]{packageFailures.Count}[/]. Nothing sent to the console.");
+                return packageFailures.Count == 0 ? 0 : 1;
+            }
+
+            if (packages.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[red]Nothing to upload.[/]");
+                return 1;
             }
 
             var role = UsbEnumerator.DetectRole();
@@ -821,33 +855,67 @@ internal sealed class AddGameCommand : Command<AddGameCommand.Settings>
             {
                 AnsiConsole.MarkupLine("[red]Console not in hakchi RNDIS mode (need 04E8:6863).[/]");
                 Ui.PrintUsbRoleHelp(role);
-                AnsiConsole.WriteLine($"Package is ready at {package.LocalDirectory}");
-                AnsiConsole.MarkupLine("[grey]When RNDIS is back: [cyan]./run status[/] should show hakchi RNDIS, then re-run add-game.[/]");
+                AnsiConsole.MarkupLine("[grey]Packages are ready under the package dir; re-run when RNDIS is up.[/]");
                 return 2;
             }
 
             using var session = new DeviceSession();
             session.Connect(settings.TimeoutSeconds);
-
+            // One layout probe for the whole batch
             var layout = session.ProbeGamesLayout();
-            var emu = string.IsNullOrWhiteSpace(settings.Emulator)
-                ? session.PickEmulator(layout, package)
-                : settings.Emulator!;
+
+            var uploaded = 0;
+            var uploadFailures = new List<(string Name, string Error)>();
+            for (var i = 0; i < packages.Count; i++)
+            {
+                var (source, package) = packages[i];
+                var isLast = i == packages.Count - 1;
+                // Refresh UI once at the end of the batch (unless --no-refresh)
+                var refresh = !settings.NoRefresh && isLast;
+
+                try
+                {
+                    AnsiConsole.WriteLine();
+                    AnsiConsole.MarkupLine(
+                        $"[bold]Uploading[/] ({i + 1}/{packages.Count}) [bold]{Markup.Escape(package.Name)}[/]…");
+
+                    var emu = string.IsNullOrWhiteSpace(settings.Emulator)
+                        ? session.PickEmulator(layout, package)
+                        : settings.Emulator!;
+                    AnsiConsole.MarkupLine(
+                        $"[grey]System:[/] {package.System}  [grey]emulator:[/] {Markup.Escape(emu)}");
+
+                    var result = session.UploadGamePackage(
+                        package,
+                        layout,
+                        emulator: emu,
+                        force: settings.Force,
+                        refresh: refresh);
+
+                    AnsiConsole.MarkupLine(
+                        $"[green]Uploaded[/] {Markup.Escape(package.Name)} → {Markup.Escape(result.RemoteDirectory)} " +
+                        $"({result.BytesUploaded} bytes)");
+                    uploaded++;
+                }
+                catch (Exception ex)
+                {
+                    uploadFailures.Add((package.Name, ex.Message));
+                    AnsiConsole.MarkupLine($"[red]Upload failed:[/] {Markup.Escape(package.Name)} — {Markup.Escape(ex.Message)}");
+                    if (settings.StopOnError)
+                        break;
+                }
+            }
+
+            AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine(
-                $"[grey]System:[/] {package.System}  [grey]emulator:[/] {Markup.Escape(emu)}");
+                $"[bold]Batch summary[/]: uploaded [green]{uploaded}[/] / {packages.Count}, " +
+                $"package errors [red]{packageFailures.Count}[/], upload errors [red]{uploadFailures.Count}[/].");
+            AnsiConsole.MarkupLine("[grey]Other games were not modified (add-only).[/]");
+            AnsiConsole.MarkupLine(
+                "[grey]On the Mini: open the letter folder for each title (e.g. DuckTales → [white]AKU - NIN[/]). " +
+                "Back out / re-enter or power-cycle if icons don't refresh.[/]");
 
-            var result = session.UploadGamePackage(
-                package,
-                layout,
-                emulator: emu,
-                force: settings.Force,
-                refresh: !settings.NoRefresh);
-
-            AnsiConsole.MarkupLine($"[green]Uploaded[/] {Markup.Escape(package.Name)} → {Markup.Escape(result.RemoteDirectory)} ({result.BytesUploaded} bytes)");
-            AnsiConsole.MarkupLine("[grey]Other games were not modified.[/]");
-            AnsiConsole.MarkupLine("[grey]On the Mini: open the [white]letter folder[/] that matches the title (e.g. DuckTales → [white]AKU - NIN[/], not POC - TOE).[/]");
-            AnsiConsole.MarkupLine("[grey]If missing, leave the menu and come back, or power-cycle once after upload.[/]");
-            return 0;
+            return packageFailures.Count == 0 && uploadFailures.Count == 0 ? 0 : 1;
         }
         catch (Exception ex)
         {
@@ -856,16 +924,68 @@ internal sealed class AddGameCommand : Command<AddGameCommand.Settings>
         }
     }
 
-    private static string ExpandPath(string path)
+    /// <summary>Expand ~, globs, and multi-args into distinct existing files.</summary>
+    internal static IEnumerable<string> ExpandInputs(IEnumerable<string> rawPaths)
     {
-        if (string.IsNullOrWhiteSpace(path))
-            throw new ArgumentException("Missing rom-or-zip path.");
-        if (path.StartsWith("~/") || path == "~")
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var raw in rawPaths)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                continue;
+
+            foreach (var path in ExpandOne(raw))
+            {
+                if (seen.Add(path))
+                    yield return path;
+            }
+        }
+    }
+
+    private static IEnumerable<string> ExpandOne(string raw)
+    {
+        var path = ExpandHome(raw.Trim());
+
+        // Explicit file
+        if (File.Exists(path))
+        {
+            yield return Path.GetFullPath(path);
+            yield break;
+        }
+
+        // Glob: ~/Downloads/*.zip or ./games/*.nes
+        var hasGlob = path.Contains('*', StringComparison.Ordinal) || path.Contains('?', StringComparison.Ordinal);
+        if (hasGlob)
+        {
+            var dir = Path.GetDirectoryName(path);
+            var pattern = Path.GetFileName(path);
+            if (string.IsNullOrEmpty(dir))
+                dir = Directory.GetCurrentDirectory();
+            if (string.IsNullOrEmpty(pattern))
+                yield break;
+            if (!Directory.Exists(dir))
+                throw new DirectoryNotFoundException($"Glob directory not found: {dir}");
+
+            var matches = Directory.GetFiles(dir, pattern, SearchOption.TopDirectoryOnly)
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (matches.Count == 0)
+                throw new FileNotFoundException($"No files matched pattern: {path}");
+            foreach (var m in matches)
+                yield return Path.GetFullPath(m);
+            yield break;
+        }
+
+        throw new FileNotFoundException($"ROM or zip not found: {path}", path);
+    }
+
+    private static string ExpandHome(string path)
+    {
+        if (path == "~" || path.StartsWith("~/", StringComparison.Ordinal) || path.StartsWith("~\\", StringComparison.Ordinal))
         {
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             path = path == "~" ? home : Path.Combine(home, path[2..]);
         }
-        return Path.GetFullPath(path);
+        return path;
     }
 }
 
@@ -924,11 +1044,13 @@ internal sealed class ReplCommand : Command<ReplSettings>
                     break;
                 case "Add game (ROM/zip → console, add-only)":
                 {
-                    var path = AnsiConsole.Ask<string>("Path to .nes or .zip:");
+                    var path = AnsiConsole.Ask<string>("Path(s) to ROM/zip (space-separated or one glob, e.g. ~/Downloads/*.zip):");
                     var dry = AnsiConsole.Confirm("Dry-run only (package, no upload)?", false);
+                    // Split on spaces but keep a single glob token; users can quote in CLI more easily.
+                    var parts = path.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     new AddGameCommand().Execute(context, new AddGameCommand.Settings
                     {
-                        InputPath = path,
+                        Paths = parts,
                         DryRun = dry,
                     });
                     break;

@@ -3,51 +3,95 @@
 Headless **macOS / Linux** CLI for Nintendo Classic Mini consoles running **hakchi**.
 
 - List games over USB RNDIS + SSH  
-- **Add games one-by-one** (NES + SNES) without Windows full-library sync  
+- **Add games** (one file, many files, or globs) for **NES + SNES** — no Windows full-library sync  
 - FEL / clovershell helpers for low-level work  
 
 This is **not** the Hakchi2-CE Windows GUI. It is a small GPL-3 project inspired by and partly ported from [Hakchi2-CE](https://github.com/TeamShinkansen/Hakchi2-CE). See [NOTICE](NOTICE) for credits.
 
-## Prerequisites (Apple Silicon / Homebrew)
+## Important: the Mini must already run hakchi
+
+This tool **does not** install or flash hakchi onto a stock Classic Mini.
+
+You need a console that already has **hakchi custom firmware** (installed earlier with Hakchi2-CE on Windows, or another supported install path). When powered on to the game menu, USB should enumerate as **RNDIS `04E8:6863`**. Stock firmware will not show that device, and `add-game` / `games` cannot talk to it.
+
+## Download (no build)
+
+From [GitHub Releases](../../releases) grab the zip for your machine:
+
+| Zip | Machine |
+|-----|---------|
+| `hackchi-cli-*-osx-arm64.zip` | Apple Silicon Mac (M1/M2/M3/…) |
+| `hackchi-cli-*-osx-x64.zip` | Intel Mac |
+| `hackchi-cli-*-linux-x64.zip` | Linux x86_64 |
+| `hackchi-cli-*-linux-arm64.zip` | Linux ARM64 |
 
 ```bash
-brew install dotnet libusb
+unzip hackchi-cli-*-osx-arm64.zip
+cd hackchi-cli-*-osx-arm64
+./hackchi status
+./hackchi games
+./hackchi add-game ~/Downloads/DuckTales.zip
 ```
 
-.NET **10** SDK and **libusb** are required.
+These builds are **self-contained** (no .NET SDK install). On macOS, `libusb` is bundled when the release was built on a Mac with Homebrew libusb. If `./hackchi status` still says libusb is missing: `brew install libusb`.
 
-## Build & run
+First USB access may show a macOS permission prompt.
+
+## Build from source
 
 ```bash
+brew install dotnet libusb   # Apple Silicon / Homebrew
+
 export PATH="/opt/homebrew/bin:$PATH"
 export DOTNET_ROOT="$(brew --prefix dotnet)/libexec"
 
 dotnet build Hakchi.Port.slnx
-
-# Convenience wrapper (sets DOTNET_ROOT)
 ./run status
-./run usb
 ./run games
-./run add-game ~/Downloads/DuckTales.zip          # NES
-./run add-game ~/Downloads/Mortal\ Kombat\ II.zip # SNES
-./run add-game game.sfc --dry-run
-./run add-game game.nes --force                   # replace same CLV only
+./run add-game ~/Downloads/DuckTales.zip
+./run add-game ~/Downloads/Mortal\ Kombat\ II.zip
 ```
 
-No arguments opens an interactive menu.
+### Make a local release zip
+
+```bash
+./scripts/publish-release.sh                 # current OS default RIDs
+RIDS=osx-arm64 ./scripts/publish-release.sh  # one platform only
+# → artifacts/release/hackchi-cli-<version>-<rid>.zip
+```
+
+Tagging `v0.1.0` (or any `v*`) on GitHub runs the release workflow and attaches zips automatically.
+
+No arguments to `./run` / `./hackchi` opens an interactive menu.
 
 ## Adding games (add-only)
 
-`add-game` packages a single ROM (or a zip containing one ROM) and uploads **only that game**. It does **not** mass-delete titles the way Windows “sync” can.
+`add-game` packages one or more ROMs (or zips each containing one ROM) and uploads **only those games**. It does **not** mass-delete titles the way Windows “sync” can.
 
-| Input | Notes |
-|-------|--------|
-| `.nes` / zip with one `.nes` | NES → kachikachi |
-| `.sfc` / `.smc` / `.sfrom` / zip | SNES → canoe `.sfrom` |
+```bash
+./run add-game game.zip                           # one file
+./run add-game a.zip b.nes c.sfc                  # multiple files
+./run add-game ~/Downloads/*.zip                  # shell expands the glob
+./run add-game '~/Downloads/*.sfc'                # CLI expands the glob
+./run add-game a.zip b.zip --force                # replace same CLV codes only
+./run add-game *.zip --dry-run                    # package only, no USB
+./run add-game *.zip --stop-on-error              # abort batch on first failure
+```
+
+Batch mode packages everything first, uses **one** SSH session, uploads in order, and refreshes the menu once at the end.
+
+| Input | System | Notes |
+|-------|--------|--------|
+| `.nes` / zip with one `.nes` | NES | Stock kachikachi |
+| `.sfc` / `.smc` / `.sfrom` / zip | SNES | Converted to canoe `.sfrom` |
 
 On the console, custom games live under letter folders (e.g. **AKU – NIN**, **POC – TOE**). The CLI places titles by sort name; `./run games` lists everything on disk.
 
 Safety: by default the CLI refuses destructive shell ops and will not replace an existing CLV folder unless you pass `--force`.
+
+### Other systems
+
+Only **NES** and **SNES** packaging are wired up so far. If you need another **system** (e.g. Genesis/Mega Drive, GB/GBC, N64, arcade cores, or whatever your hakchi box already emulates), open an issue or ask — adding a system is usually a small, focused change once the console already has the right core/emulator.
 
 ## Layout
 
@@ -75,9 +119,9 @@ Safety: by default the CLI refuses destructive shell ops and will not replace an
 
 ## Status
 
-Working: device detect, FEL, RNDIS SSH, game list, **add-only NES/SNES upload**, letter-folder placement.
+Working: device detect, FEL, RNDIS SSH, game list, **add-only multi-upload** (NES + SNES), letter-folder placement, self-contained release zips.
 
-Intentionally not included: Windows full-library sync, scrapers, hmod GUI, WinForms.
+Intentionally not included: installing hakchi on stock hardware, Windows full-library sync, scrapers, hmod GUI, WinForms. More **systems** (beyond NES/SNES) on request.
 
 ## License
 

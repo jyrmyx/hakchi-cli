@@ -8,7 +8,11 @@
     <RootNamespace>Hakchi.Cli</RootNamespace>
     <AssemblyName>hakchi-cli</AssemblyName>
     <Version>0.1.0</Version>
-    <Description>Headless / ASCII CLI port of Hakchi2-CE for macOS and Linux</Description>
+    <Description>Headless CLI for hakchi Classic Minis (macOS / Linux)</Description>
+    <!-- Release publish defaults (overridable on CLI) -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
